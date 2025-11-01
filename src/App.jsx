@@ -15,7 +15,7 @@ function App() {
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState("publishedAt")
   useEffect(() => {
-    fetch(`https://newsapi.org/v2/everything?q=${category}&apiKey=18fc95f877b84bc3b5334d36c71220c1&pageSize=20&language=${language}&page=${page}&sortby=${sort}`)
+    fetch(`https://newsapi.org/v2/everything?q=bihar%20election&apiKey=18fc95f877b84bc3b5334d36c71220c1&pageSize=20&language=hi&page=1&sortBy=publishedAt`)
       .then((response) => response.json())
       .then((data) => {
         // console.log(data.articles);
