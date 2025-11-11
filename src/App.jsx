@@ -1,88 +1,153 @@
-import { useState, useEffect, createContext, InputLabel, NativeSelect } from 'react'
-import './style.css'
-import { Grid, Pagination, Backdrop, CircularProgress, FormControl } from '@mui/material';
-import CardComponent from './CardComponent';
-import Header from './Header';
-import Category from './Category';
-import Sort from './Sort';
-export const LanguageContext = createContext('en')
+import { useState, useEffect, createContext } from "react";
+import "./style.css";
+import {
+  Grid,
+  Pagination,
+  Backdrop,
+  CircularProgress,
+  Card,
+  CardMedia,
+  CardContent,
+  Typography,
+  Button,
+} from "@mui/material";
+
+export const LanguageContext = createContext("en");
 
 function App() {
-  const [backdrop, setBackdrop] = useState(true)
-  const [language, setLanguage] = useState("en")
-  const [newsList, setNewsList] = useState([true])
-  const [category, setCategory] = useState("Business")
-  const [page, setPage] = useState(1)
-  const [sort, setSort] = useState("publishedAt")
-  useEffect(() => {
-    fetch(`https://newsapi.org/v2/everything?q=bihar%20election&apiKey=18fc95f877b84bc3b5334d36c71220c1&pageSize=20&language=hi&page=1&sortBy=publishedAt`)
-      .then((response) => response.json())
-      .then((data) => {
-        // console.log(data.articles);
-        setBackdrop(false)
-        return setNewsList(data.articles)
-      })
-  }, [language, page, category, sort])
-  function setLanguageClick() {
-    if (language === "en") {
-      setBackdrop(true)
-      setLanguage("es")
-    }
-    else {
-      setLanguage("en")
-    }
-  }
-  function handleChanagePage(value) {
-    window.scrollTo(0, 0)
-    setPage(value)
-    setBackdrop(true)
-  }
-  function changeCategory(categorys) {
-    setCategory(categorys)
-    setBackdrop(true)
-  }
+  const [backdrop, setBackdrop] = useState(true);
+  const [language, setLanguage] = useState("en");
+  const [videos, setVideos] = useState([]);
+  const [category, setCategory] = useState("music");
+  const [page, setPage] = useState(1);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSort = (event) => {
-    setBackdrop(true)
-    setSort(event.target.value);
+  useEffect(() => {
+    const fetchData = async () => {
+      setBackdrop(true);
+      setErrorMsg("");
+
+      try {
+        // ✅ Apna RapidAPI key yah daalo
+        const API_KEY = "2f1f101fb7mshae6ce8eedc8d7a4p1bcef3jsnc456353ddd0a";
+
+        const res = await fetch(
+          `https://youtube138.p.rapidapi.com/search/?q==bihar%20election%20news&hl=hi&gl=IN&hl=${language}&gl=US`,
+          {
+            method: "GET",
+            headers: {
+              "x-rapidapi-key": API_KEY,
+              "x-rapidapi-host": "youtube138.p.rapidapi.com",
+            },
+          }
+        );
+
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`HTTP ${res.status}: ${text}`);
+        }
+
+        const data = await res.json();
+        console.log("✅ API Data:", data);
+
+        if (data && data.contents) {
+          const videoResults = data.contents.filter(
+            (item) => item.video !== undefined
+          );
+          setVideos(videoResults);
+        } else {
+          setVideos([]);
+          setErrorMsg("No videos found for this category.");
+        }
+      } catch (err) {
+        console.error("❌ Fetch error:", err);
+        setErrorMsg("Failed to load data. Please check API key or subscription.");
+      } finally {
+        setBackdrop(false);
+      }
+    };
+
+    const timer = setTimeout(fetchData, 800);
+    return () => clearTimeout(timer);
+  }, [language, page, category]);
+
+  const setLanguageClick = () => {
+    setBackdrop(true);
+    setLanguage((prev) => (prev === "en" ? "es" : "en"));
+  };
+
+  const handleChangePage = (event, value) => {
+    window.scrollTo(0, 0);
+    setPage(value);
+    setBackdrop(true);
   };
 
   return (
-    <div className='container'>
-      <LanguageContext.Provider value='language'>
-        <div className='header'>
-          <h1>Latest news</h1>
-        </div>
+    <div className="container" style={{ padding: "20px" }}>
+      <LanguageContext.Provider value={language}>
+        <h1 style={{ textAlign: "center" }}>🎬 YouTube Video Explorer</h1>
+
         <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
           open={backdrop}
         >
           <CircularProgress color="inherit" />
         </Backdrop>
-        <div className='lang'> <Header setLanguaseClick={setLanguageClick} language={language} /></div>
-        <div className='sort'>
-          <Sort handleSort={handleSort} sort={sort} />
-        </div>
-        <div className='category'>
-          <Category changeCategory={changeCategory} />
-        </div>
-        <br />
-        <br />
-        <div className='content'>
-          <Grid container spacing={4}>
-            {newsList.length && newsList.map((newsItem, index) => {
-              return <Grid item xs={4} key={index}>
-                <CardComponent newsItem={newsItem} />
-              </Grid>
-            })}
-          </Grid>
-        </div>
-      </LanguageContext.Provider >
-      <div className='pagination'>
-        <Pagination variant="outlined" count={5} shape="rounded" onChange={handleChanagePage} />
-      </div>
-    </div >
-  )
-}
 
-export default App
+        {errorMsg && (
+          <p style={{ color: "red", textAlign: "center" }}>{errorMsg}</p>
+        )}
+
+        <Grid container spacing={3}>
+          {videos.map((item, index) => {
+            const video = item.video;
+            return (
+              <Grid item xs={12} sm={6} md={4} key={index}>
+                <Card>
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={video.thumbnails[0].url}
+                    alt={video.title}
+                  />
+                  <CardContent>
+                    <Typography variant="h6" component="div">
+                      {video.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {video.author?.title || "Unknown Channel"}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      style={{ marginTop: "10px" }}
+                      href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                      target="_blank"
+                    >
+                      ▶ Watch
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
+      </LanguageContext.Provider>
+
+      <div
+        className="pagination"
+        style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}
+      >
+        <Pagination
+          variant="outlined"
+          count={5}
+          shape="rounded"
+          page={page}
+          onChange={handleChangePage}
+        />
+      </div>
+    </div>
+  );
+}
+export default App;
